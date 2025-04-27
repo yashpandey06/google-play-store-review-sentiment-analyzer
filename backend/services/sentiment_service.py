@@ -1,34 +1,40 @@
 import asyncio
 from typing import List, Dict, Any
 from transformers import pipeline
+from aiolimiter import AsyncLimiter
 
 _sentiment = pipeline("sentiment-analysis")
 
-async def analyze_reviews_batch(
-    reviews: List[Dict[str, Any]],
-    batch_size: int = 10,
-    batch_delay: float = 1.0
+MAX_CONCURRENT_WORKERS = 5                # max simultaneous model inferences
+RATE_LIMIT_CALLS = 10                     # max calls per time period
+RATE_LIMIT_PERIOD = 1.0                   # seconds
+
+_semaphore = asyncio.Semaphore(MAX_CONCURRENT_WORKERS)
+_rate_limiter = AsyncLimiter(RATE_LIMIT_CALLS, RATE_LIMIT_PERIOD)
+
+async def _analyze_single(text: str) -> Dict[str, Any]:
+    """
+    Analyze a single review text under concurrency and rate limits.
+    """
+    async with _semaphore:
+        async with _rate_limiter:
+            result = await asyncio.to_thread(_sentiment, [text])
+    res = result[0]
+    label = res.get("label", "").upper()
+    score = res.get("score", 0.0)
+    sentiment_score = score if label == "POSITIVE" else -score
+    return {"review_text": text, "sentiment_score": sentiment_score}
+
+async def analyze_reviews_concurrent(
+    reviews: List[Dict[str, Any]]
 ) -> List[Dict[str, Any]]:
-    analyzed: List[Dict[str, Any]] = []
-    for i in range(0, len(reviews), batch_size):
-        batch = reviews[i : i + batch_size]
-        texts = [r.get("content", "") for r in batch]
-
-        results = await asyncio.to_thread(_sentiment, texts)
-
-        for review, res in zip(batch, results):
-            label = res.get("label", "").upper()
-            score = res.get("score", 0.0)
-            sentiment_score = score if label == "POSITIVE" else -score
-            analyzed.append({
-                "review_text": review.get("content", ""),
-                "sentiment_score": sentiment_score
-            })
-
-        if i + batch_size < len(reviews):
-            await asyncio.sleep(batch_delay)
-
+    """
+    Analyze a list of reviews concurrently with rate limiting.
+    """
+    tasks = [asyncio.create_task(_analyze_single(r.get("content", ""))) for r in reviews]
+    analyzed = await asyncio.gather(*tasks)
     return analyzed
+
 
 def calculate_average_sentiment(analyzed_reviews: List[Dict[str, Any]]) -> float:
     if not analyzed_reviews:

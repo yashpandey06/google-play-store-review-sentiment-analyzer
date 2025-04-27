@@ -1,6 +1,7 @@
 from fastapi import APIRouter, HTTPException
 from models.schemas import AppRequest, AnalysisResponse, AppInfo
-from services import play_store_service, sentiment_service
+from services import play_store_service
+from services.sentiment_service import analyze_reviews_concurrent, calculate_average_sentiment
 from config import settings
 from datetime import datetime, timedelta
 
@@ -16,7 +17,7 @@ async def analyze_app_reviews(request: AppRequest):
     if cached:
         ts, resp = cached
         if now - ts < _CACHE_TTL:
-            return resp  
+            return resp
 
     try:
         app_id = await play_store_service.get_app_id(request.appName)
@@ -28,13 +29,10 @@ async def analyze_app_reviews(request: AppRequest):
         if not reviews:
             raise HTTPException(status_code=404, detail="No reviews found for this app")
 
-        analyzed = await sentiment_service.analyze_reviews_batch(
-            reviews,
-            batch_size=settings.BATCH_SIZE,
-            batch_delay=settings.BATCH_DELAY
-        )
+        # Use the new concurrent, rate-limited analyzer
+        analyzed = await analyze_reviews_concurrent(reviews)
 
-        avg = sentiment_service.calculate_average_sentiment(analyzed)
+        avg = calculate_average_sentiment(analyzed)
 
         response = AnalysisResponse(
             average_sentiment=avg,
@@ -51,7 +49,6 @@ async def analyze_app_reviews(request: AppRequest):
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Unexpected error: {e}")
 
-
 @router.get("/search-apps/{query}", response_model=list[AppInfo])
 async def search_app_names(query: str):
     if len(query) < 2:
@@ -60,7 +57,6 @@ async def search_app_names(query: str):
         return await play_store_service.search_apps(query)
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error searching apps: {e}")
-
 
 @router.get("/")
 async def home():
