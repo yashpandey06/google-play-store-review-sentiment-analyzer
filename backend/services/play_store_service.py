@@ -5,32 +5,27 @@ from typing import List, Dict, Any
 from models.schemas import AppInfo
 
 async def search_apps(query: str) -> List[AppInfo]:
-    """Search for apps by name"""
     try:
         results = search(query)
         return [AppInfo(appId=app["appId"], title=app["title"]) for app in results]
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Error searching apps: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
 
 async def get_app_id(app_name: str) -> str:
-    """Get app ID from name"""
-    search_results = await search_apps(app_name)
-    if not search_results:
+    apps = await search_apps(app_name)
+    if not apps:
         raise HTTPException(status_code=404, detail=f"No apps found with name: {app_name}")
-    
-    # Return the app ID of the first result
-    return search_results[0].appId
+    return apps[0].appId
 
-async def get_app_reviews(app_id: str, count: int = 100) -> List[Dict[str, Any]]:
-    """Get reviews for an app"""
+async def get_app_reviews(app_id: str, count: int) -> List[Dict[str, Any]]:
     try:
-        result, continuation_token = reviews_all(
+        all_reviews = reviews_all(
             app_id,
-            lang='en',
-            country='us',
+            lang="en",
+            country="us",
             sort=Sort.NEWEST,
             count=count
         )
-        return result[:count]
+        return all_reviews[:count]
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Error fetching reviews: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
