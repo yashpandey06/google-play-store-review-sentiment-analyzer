@@ -152,7 +152,7 @@ export default function LandingPage() {
                 variant="outline" 
                 size="lg"
                 className="text-base sm:text-lg px-6 sm:px-8 py-5 sm:py-6 border-primary/20 hover:bg-primary/5 w-full sm:w-auto"
-                onClick={() => window.open('https://github.com/yourusername/play-store-analyzer', '_blank')}
+                onClick={() => window.open('https://github.com/yashpandey06/google-play-store-review-sentiment-analyzer', '_blank')}
               >
                 <Github className="mr-2 h-4 w-4 sm:h-5 sm:w-5" /> View Code
               </Button>
@@ -299,7 +299,7 @@ export default function LandingPage() {
               <h4 className="font-medium text-sm sm:text-base mb-2 sm:mb-4">Resources</h4>
               <ul className="space-y-1 sm:space-y-2">
                 <li><Link href="#" className="text-xs sm:text-sm text-muted-foreground hover:text-foreground transition-colors">Documentation</Link></li>
-                <li><Link href="https://github.com/yourusername/play-store-analyzer" className="text-xs sm:text-sm text-muted-foreground hover:text-foreground transition-colors">GitHub Repository</Link></li>
+                <li><Link href="https://github.com/yashpandey06/google-play-store-review-sentiment-analyzer" className="text-xs sm:text-sm text-muted-foreground hover:text-foreground transition-colors">GitHub Repository</Link></li>
               </ul>
             </div>
             

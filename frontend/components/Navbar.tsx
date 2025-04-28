@@ -48,7 +48,7 @@ export default function Navbar() {
             variant="outline" 
             size="sm" 
             className="hidden md:flex"
-            onClick={() => window.open('https://github.com/yourusername/play-store-analyzer', '_blank')}
+            onClick={() => window.open('https://github.com/yashpandey06/google-play-store-review-sentiment-analyzer', '_blank')}
           >
             <Github className="mr-2 h-4 w-4" />
             View Code
