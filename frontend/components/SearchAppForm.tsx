@@ -52,7 +52,9 @@ export default function SearchAppForm({ onSearch }: Props) {
         </CommandList>
       </Command>
 
-      <Button type="submit">Analyze</Button>
+      <div className="flex justify-center">
+        <Button type="submit">Analyze</Button>
+      </div>
     </form>
   );
 }
